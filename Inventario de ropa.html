@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Percha — Inventario</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@500;600;700&family=Work+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#23272B;--paper:#F5F2EC;--paper-2:#EBE6DC;--line:#D8D1C2;--denim:#3A5A78;--denim-dk:#2B4257;--rust:#B4592A;--sage:#5C7A52;--white:#FFFDF9;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--ink:#EDE9E1;--paper:#1C1B19;--paper-2:#242220;--line:#3A362F;--denim:#7FA3C4;--denim-dk:#9DBBD6;--rust:#E08659;--sage:#93B486;--white:#262420}}
+:root[data-theme="dark"]{--ink:#EDE9E1;--paper:#1C1B19;--paper-2:#242220;--line:#3A362F;--denim:#7FA3C4;--denim-dk:#9DBBD6;--rust:#E08659;--sage:#93B486;--white:#262420}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Work Sans',sans-serif;min-height:100%;-webkit-font-smoothing:antialiased}
+h1,h2,.headline{font-family:'Zilla Slab',serif}
+header{padding:24px 20px 0;border-bottom:2px solid var(--ink)}
+header h1{margin:0;font-size:1.8rem;font-weight:700;letter-spacing:-0.01em}
+header p{margin:6px 0 16px;opacity:.7;font-size:.9rem;max-width:60ch}
+nav.tabs{display:flex;gap:2px;overflow-x:auto}
+nav.tabs button{background:none;border:none;padding:10px 16px;font-family:inherit;font-size:.92rem;cursor:pointer;color:var(--ink);opacity:.55;border-bottom:2px solid transparent;white-space:nowrap}
+nav.tabs button.active{opacity:1;border-color:var(--denim);font-weight:600}
+.summary{display:flex;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+.summary .stat{flex:1;min-width:105px;padding:12px 16px;border-right:1px solid var(--line)}
+.summary .stat:last-child{border-right:none}
+.summary .stat .num{font-family:'Zilla Slab',serif;font-size:1.3rem;font-weight:600;display:block}
+.summary .stat .lbl{font-size:.74rem;opacity:.65}
+.summary .stat.warn .num{color:var(--rust)}
+main{padding:16px 20px 50px;max-width:920px;margin:0 auto}
+.panel{display:none}
+.panel.active{display:block}
+.card{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:18px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+label{display:block;font-size:.72rem;opacity:.7;margin-bottom:4px}
+input,select{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink);font-family:inherit;font-size:.9rem}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--denim);outline-offset:1px}
+.row-end{display:flex;justify-content:flex-end;margin-top:12px}
+button.primary{background:var(--ink);color:var(--paper);border:none;padding:9px 18px;border-radius:6px;font-family:inherit;font-size:.9rem;font-weight:500;cursor:pointer}
+button.primary:hover{background:var(--denim-dk)}
+button.ghost{background:none;border:1px solid var(--line);color:var(--ink);padding:6px 12px;border-radius:6px;font-family:inherit;font-size:.82rem;cursor:pointer}
+button.ghost:hover{border-color:var(--ink)}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.toolbar input,.toolbar select{flex:1;min-width:140px}
+.items{display:flex;flex-direction:column;gap:10px}
+.product{background:var(--white);border:1px solid var(--line);border-radius:10px;padding:14px}
+.product .top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.product .name{font-weight:600;font-size:1.02rem}
+.product .meta{font-size:.78rem;opacity:.65;margin-top:2px}
+.product .price-block{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.product .price-block .sell{font-family:'Zilla Slab',serif;font-weight:600}
+.product .price-block .cost{font-size:.74rem;opacity:.6}
+.variants{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.variant{display:flex;align-items:center;gap:6px;background:var(--paper-2);border:1px solid var(--line);border-radius:20px;padding:3px 4px 3px 12px;font-size:.8rem}
+.variant.low{border-color:var(--rust);color:var(--rust)}
+.variant .vq{font-weight:600;min-width:16px;text-align:center}
+.variant button{background:var(--white);border:1px solid var(--line);width:20px;height:20px;border-radius:50%;font-size:.75rem;line-height:1;cursor:pointer;color:inherit}
+.product .foot{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:8px;flex-wrap:wrap}
+.tag{display:inline-block;font-size:.72rem;padding:2px 9px;border-radius:20px;background:var(--paper-2);border:1px solid var(--line)}
+.mini-form{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;align-items:flex-end}
+.mini-form input{width:70px}
+table{width:100%;border-collapse:collapse;font-size:.86rem}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-size:.72rem;opacity:.65;font-weight:500}
+td.pos{color:var(--sage)}
+td.neg{color:var(--rust)}
+.empty{text-align:center;padding:40px 20px;opacity:.6}
+.empty .headline{font-size:1.15rem;margin-bottom:6px}
+.report-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:600px){.report-grid{grid-template-columns:1fr}.product .top{flex-direction:column}.product .price-block{text-align:left}}
+.list-simple{list-style:none;padding:0;margin:0}
+.list-simple li{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--line);font-size:.88rem}
+.list-simple li:last-child{border-bottom:none}
+.remove-row{background:none;border:none;color:var(--rust);cursor:pointer;font-size:1rem;padding:0 4px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Percha</h1>
+  <p>Inventario de ropa por tallas y colores, con movimientos de stock y reportes.</p>
+  <nav class="tabs">
+    <button class="active" data-tab="inventario">Inventario</button>
+    <button data-tab="movimientos">Movimientos</button>
+    <button data-tab="reportes">Reportes</button>
+  </nav>
+</header>
+
+<div class="summary" id="summary"></div>
+
+<main>
+  <!-- INVENTARIO -->
+  <section class="panel active" id="panel-inventario">
+    <div class="card">
+      <h2 style="margin-top:0;font-size:1.1rem">Nueva prenda</h2>
+      <form id="addForm">
+        <div class="grid">
+          <div><label>Nombre</label><input id="f-name" required placeholder="Camisa lino"></div>
+          <div><label>SKU</label><input id="f-sku" placeholder="CAM-001"></div>
+          <div><label>Categoría</label>
+            <select id="f-cat"><option>Camisas</option><option>Pantalones</option><option>Vestidos</option><option>Abrigos</option><option>Calzado</option><option>Accesorios</option></select>
+          </div>
+          <div><label>Subcategoría</label><input id="f-subcat" placeholder="Manga larga"></div>
+          <div><label>Proveedor</label><input id="f-supplier" placeholder="Textiles SA"></div>
+          <div><label>Costo</label><input id="f-cost" type="number" min="0" step="0.01" value="0"></div>
+          <div><label>Precio venta</label><input id="f-price" type="number" min="0" step="0.01" value="0"></div>
+          <div><label>Umbral bajo stock</label><input id="f-threshold" type="number" min="0" value="3"></div>
+          <div><label>Imagen (URL, opcional)</label><input id="f-image" placeholder="https://…"></div>
+        </div>
+        <h3 style="font-size:.85rem;margin:14px 0 6px">Variantes iniciales (talla / color / cantidad)</h3>
+        <div id="variantRows"></div>
+        <button type="button" class="ghost" id="addVariantRow">+ agregar variante</button>
+        <div class="row-end"><button type="submit" class="primary">Guardar prenda</button></div>
+      </form>
+    </div>
+
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Buscar por nombre, SKU, color, talla…">
+      <select id="filterCat"><option value="">Todas las categorías</option><option>Camisas</option><option>Pantalones</option><option>Vestidos</option><option>Abrigos</option><option>Calzado</option><option>Accesorios</option></select>
+      <select id="sortBy"><option value="name">Ordenar: nombre</option><option value="qty">Cantidad</option><option value="value">Valor</option><option value="date">Más reciente</option></select>
+    </div>
+    <div class="items" id="items"></div>
+    <div class="empty" id="emptyState" style="display:none"><div class="headline">El perchero está vacío</div><div>Añade tu primera prenda arriba.</div></div>
+  </section>
+
+  <!-- MOVIMIENTOS -->
+  <section class="panel" id="panel-movimientos">
+    <div class="card">
+      <h2 style="margin-top:0;font-size:1.1rem">Registrar movimiento</h2>
+      <form id="movForm">
+        <div class="grid">
+          <div><label>Prenda</label><select id="m-product" required></select></div>
+          <div><label>Variante</label><select id="m-variant" required></select></div>
+          <div><label>Tipo</label><select id="m-type"><option value="in">Entrada</option><option value="out">Salida</option><option value="adjust">Ajuste</option></select></div>
+          <div><label>Cantidad</label><input id="m-qty" type="number" min="1" value="1" required></div>
+          <div><label>Motivo</label><input id="m-reason" placeholder="Compra, venta, merma…"></div>
+        </div>
+        <div class="row-end"><button type="submit" class="primary">Registrar</button></div>
+      </form>
+    </div>
+    <div class="card">
+      <h2 style="margin-top:0;font-size:1.1rem">Historial</h2>
+      <div style="overflow-x:auto"><table id="movTable"></table></div>
+    </div>
+  </section>
+
+  <!-- REPORTES -->
+  <section class="panel" id="panel-reportes">
+    <div class="report-grid">
+      <div class="card">
+        <h2 style="margin-top:0;font-size:1rem">Más movimiento</h2>
+        <ul class="list-simple" id="topMovers"></ul>
+      </div>
+      <div class="card">
+        <h2 style="margin-top:0;font-size:1rem">Sin movimiento</h2>
+        <ul class="list-simple" id="stagnant"></ul>
+      </div>
+    </div>
+    <div class="card">
+      <button type="button" class="ghost" id="exportCsv">Exportar inventario a CSV</button>
+    </div>
+  </section>
+</main>
+
+<script>
+const LOW = 3;
+let products = [], movements = [];
+try { products = JSON.parse(localStorage.getItem('percha-products')) || []; } catch(e){}
+try { movements = JSON.parse(localStorage.getItem('percha-movements')) || []; } catch(e){}
+let variantRowCount = 0;
+
+function save(){ try{ localStorage.setItem('percha-products', JSON.stringify(products)); localStorage.setItem('percha-movements', JSON.stringify(movements)); }catch(e){} }
+function uid(){ return Date.now()+'-'+Math.random().toString(36).slice(2,7); }
+function fmt(n){ return new Intl.NumberFormat('es-ES',{style:'currency',currency:'USD'}).format(n||0); }
+function esc(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function productQty(p){ return p.variants.reduce((s,v)=>s+Number(v.qty),0); }
+function productMoveCount(p){ return movements.filter(m=>m.productId===p.id).length; }
+
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+    if(btn.dataset.tab==='movimientos') renderMovTab();
+    if(btn.dataset.tab==='reportes') renderReports();
+  });
+});
+
+function addVariantRow(size='',color='',qty=''){
+  variantRowCount++;
+  const id = 'vr'+variantRowCount;
+  const div = document.createElement('div');
+  div.className='mini-form'; div.id=id;
+  div.innerHTML = `<div><label>Talla</label><input class="vr-size" value="${esc(size)}" placeholder="M"></div>
+    <div><label>Color</label><input class="vr-color" value="${esc(color)}" placeholder="Azul"></div>
+    <div><label>Cant.</label><input class="vr-qty" type="number" min="0" value="${qty}"></div>
+    <button type="button" class="remove-row" title="Quitar">✕</button>`;
+  div.querySelector('.remove-row').addEventListener('click',()=>div.remove());
+  document.getElementById('variantRows').appendChild(div);
+}
+document.getElementById('addVariantRow').addEventListener('click',()=>addVariantRow());
+addVariantRow('','',1);
+
+document.getElementById('addForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const name = document.getElementById('f-name').value.trim();
+  if(!name) return;
+  const variants = [...document.querySelectorAll('#variantRows .mini-form')].map(row=>({
+    id: uid(),
+    size: row.querySelector('.vr-size').value.trim(),
+    color: row.querySelector('.vr-color').value.trim(),
+    qty: Number(row.querySelector('.vr-qty').value)||0
+  })).filter(v=>v.size||v.color);
+  if(variants.length===0) variants.push({id:uid(),size:'Única',color:'',qty:0});
+  products.push({
+    id: uid(), name,
+    sku: document.getElementById('f-sku').value.trim(),
+    category: document.getElementById('f-cat').value,
+    subcategory: document.getElementById('f-subcat').value.trim(),
+    supplier: document.getElementById('f-supplier').value.trim(),
+    cost: Number(document.getElementById('f-cost').value)||0,
+    price: Number(document.getElementById('f-price').value)||0,
+    threshold: Number(document.getElementById('f-threshold').value)||0,
+    image: document.getElementById('f-image').value.trim(),
+    createdAt: Date.now(),
+    variants
+  });
+  save(); renderInventory();
+  e.target.reset();
+  document.getElementById('variantRows').innerHTML=''; variantRowCount=0; addVariantRow('','',1);
+  document.getElementById('f-threshold').value=3;
+});
+
+function renderSummary(){
+  const totalUnits = products.reduce((s,p)=>s+productQty(p),0);
+  const valueSell = products.reduce((s,p)=>s+p.variants.reduce((a,v)=>a+Number(v.qty)*Number(p.price),0),0);
+  const valueCost = products.reduce((s,p)=>s+p.variants.reduce((a,v)=>a+Number(v.qty)*Number(p.cost),0),0);
+  const lowCount = products.filter(p=>productQty(p)<=p.threshold).length;
+  document.getElementById('summary').innerHTML = `
+    <div class="stat"><span class="num">${products.length}</span><span class="lbl">prendas</span></div>
+    <div class="stat"><span class="num">${totalUnits}</span><span class="lbl">unidades</span></div>
+    <div class="stat"><span class="num">${fmt(valueSell)}</span><span class="lbl">valor venta</span></div>
+    <div class="stat"><span class="num">${fmt(valueCost)}</span><span class="lbl">valor costo</span></div>
+    <div class="stat ${lowCount?'warn':''}"><span class="num">${lowCount}</span><span class="lbl">bajo stock</span></div>`;
+}
+
+function renderInventory(){
+  const q = document.getElementById('search').value.trim().toLowerCase();
+  const cat = document.getElementById('filterCat').value;
+  const sortBy = document.getElementById('sortBy').value;
+  let list = products.filter(p=>{
+    const hay = [p.name,p.sku,p.category,p.subcategory,p.supplier,...p.variants.map(v=>v.size+' '+v.color)].join(' ').toLowerCase();
+    return (!q||hay.includes(q)) && (!cat||p.category===cat);
+  });
+  list.sort((a,b)=>{
+    if(sortBy==='qty') return productQty(b)-productQty(a);
+    if(sortBy==='value') return (productQty(b)*b.price)-(productQty(a)*a.price);
+    if(sortBy==='date') return b.createdAt-a.createdAt;
+    return a.name.localeCompare(b.name);
+  });
+  const container = document.getElementById('items');
+  container.innerHTML='';
+  document.getElementById('emptyState').style.display = products.length===0 ? 'block':'none';
+  list.forEach(p=>{
+    const el = document.createElement('div');
+    el.className='product';
+    el.innerHTML = `
+      <div class="top">
+        <div>
+          <div class="name">${esc(p.name)}</div>
+          <div class="meta">${p.sku?esc(p.sku)+' · ':''}${esc(p.category)}${p.subcategory?' / '+esc(p.subcategory):''}${p.supplier?' · '+esc(p.supplier):''}</div>
+        </div>
+        <div class="price-block">
+          <div class="sell">${fmt(p.price)}</div>
+          <div class="cost">costo ${fmt(p.cost)}</div>
+        </div>
+      </div>
+      <div class="variants">${p.variants.map(v=>{
+        const low = Number(v.qty)<=p.threshold;
+        return `<span class="variant ${low?'low':''}" data-vid="${v.id}">
+          ${v.size?esc(v.size):''}${v.color?' · '+esc(v.color):''}
+          <button data-act="minus" data-vid="${v.id}">−</button>
+          <span class="vq">${v.qty}</span>
+          <button data-act="plus" data-vid="${v.id}">+</button>
+        </span>`;
+      }).join('')}</div>
+      <div class="foot">
+        <span class="tag">Total: ${productQty(p)} u.</span>
+        <div>
+          <button type="button" class="ghost" data-act="addvariant">+ variante</button>
+          <button type="button" class="ghost" data-act="delete">Eliminar prenda</button>
+        </div>
+      </div>`;
+    el.querySelectorAll('[data-act="minus"],[data-act="plus"]').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const v = p.variants.find(x=>x.id===btn.dataset.vid);
+        const delta = btn.dataset.act==='plus'?1:-1;
+        v.qty = Math.max(0, Number(v.qty)+delta);
+        movements.unshift({id:uid(),productId:p.id,variantId:v.id,productName:p.name,variantLabel:(v.size||'')+(v.color?' '+v.color:''),type:delta>0?'in':'out',qty:1,reason:delta>0?'Ajuste rápido (+)':'Ajuste rápido (−)',date:Date.now()});
+        save(); renderInventory();
+      });
+    });
+    el.querySelector('[data-act="delete"]').addEventListener('click',()=>{
+      products = products.filter(x=>x.id!==p.id);
+      save(); renderInventory();
+    });
+    el.querySelector('[data-act="addvariant"]').addEventListener('click',()=>{
+      const size = prompt('Talla:',''); if(size===null) return;
+      const color = prompt('Color:',''); if(color===null) return;
+      const qty = Number(prompt('Cantidad inicial:','0'))||0;
+      p.variants.push({id:uid(),size:size.trim(),color:color.trim(),qty});
+      save(); renderInventory();
+    });
+    container.appendChild(el);
+  });
+  renderSummary();
+}
+
+function renderMovTab(){
+  const productSel = document.getElementById('m-product');
+  productSel.innerHTML = products.map(p=>`<option value="${p.id}">${esc(p.name)}</option>`).join('');
+  updateVariantSelect();
+  renderMovTable();
+}
+function updateVariantSelect(){
+  const p = products.find(x=>x.id===document.getElementById('m-product').value) || products[0];
+  const sel = document.getElementById('m-variant');
+  sel.innerHTML = p ? p.variants.map(v=>`<option value="${v.id}">${esc(v.size||'')} ${esc(v.color||'')} (stock ${v.qty})</option>`).join('') : '';
+}
+document.getElementById('m-product').addEventListener('change', updateVariantSelect);
+
+document.getElementById('movForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const p = products.find(x=>x.id===document.getElementById('m-product').value);
+  if(!p) return;
+  const v = p.variants.find(x=>x.id===document.getElementById('m-variant').value);
+  if(!v) return;
+  const type = document.getElementById('m-type').value;
+  const qty = Number(document.getElementById('m-qty').value)||0;
+  const reason = document.getElementById('m-reason').value.trim();
+  if(type==='in') v.qty = Number(v.qty)+qty;
+  else if(type==='out') v.qty = Math.max(0, Number(v.qty)-qty);
+  else v.qty = qty;
+  movements.unshift({id:uid(),productId:p.id,variantId:v.id,productName:p.name,variantLabel:(v.size||'')+(v.color?' '+v.color:''),type,qty,reason,date:Date.now()});
+  save(); renderMovTab(); renderInventory();
+  e.target.reset(); document.getElementById('m-qty').value=1;
+});
+
+function renderMovTable(){
+  const rows = movements.slice(0,80).map(m=>{
+    const label = m.type==='in'?'Entrada':m.type==='out'?'Salida':'Ajuste';
+    const cls = m.type==='in'?'pos':m.type==='out'?'neg':'';
+    const d = new Date(m.date);
+    return `<tr><td>${d.toLocaleDateString('es-ES')}</td><td>${esc(m.productName)}</td><td>${esc(m.variantLabel)}</td><td class="${cls}">${label}</td><td>${m.qty}</td><td>${esc(m.reason||'—')}</td></tr>`;
+  }).join('');
+  document.getElementById('movTable').innerHTML = `<thead><tr><th>Fecha</th><th>Prenda</th><th>Variante</th><th>Tipo</th><th>Cant.</th><th>Motivo</th></tr></thead><tbody>${rows||'<tr><td colspan="6" style="opacity:.6">Sin movimientos aún.</td></tr>'}</tbody>`;
+}
+
+function renderReports(){
+  const withCounts = products.map(p=>({p,count:productMoveCount(p)})).sort((a,b)=>b.count-a.count);
+  document.getElementById('topMovers').innerHTML = withCounts.slice(0,6).map(x=>`<li><span>${esc(x.p.name)}</span><span>${x.count} mov.</span></li>`).join('') || '<li>Sin datos aún</li>';
+  const stagnant = products.filter(p=>productMoveCount(p)===0);
+  document.getElementById('stagnant').innerHTML = stagnant.slice(0,6).map(p=>`<li><span>${esc(p.name)}</span><span>${productQty(p)} u.</span></li>`).join('') || '<li>Todo con movimiento</li>';
+}
+
+document.getElementById('exportCsv').addEventListener('click',()=>{
+  const rows = [['Nombre','SKU','Categoria','Subcategoria','Talla','Color','Cantidad','Costo','Precio','Proveedor']];
+  products.forEach(p=>p.variants.forEach(v=>{
+    rows.push([p.name,p.sku,p.category,p.subcategory,v.size,v.color,v.qty,p.cost,p.price,p.supplier]);
+  }));
+  const csv = rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'inventario.csv'; a.click();
+});
+
+document.getElementById('search').addEventListener('input', renderInventory);
+document.getElementById('filterCat').addEventListener('change', renderInventory);
+document.getElementById('sortBy').addEventListener('change', renderInventory);
+
+renderInventory();
+</script>
+</body>
+</html>
